@@ -1,0 +1,480 @@
+/* Synapse 1.4 · camada de interface: trilho e painel recolhíveis e redimensionáveis, anéis de uso,
+   escrita ao vivo e microinterações. Carregada depois de styles.css; movimento reduzido desliga as animações
+   (regra global no fim de styles.css). */
+
+/* ------------------------------------------------------------ estrutura animada */
+.app-shell { transition: grid-template-columns .5s var(--mola); }
+body.arrastando, body.arrastando * { cursor: col-resize !important; user-select: none !important; }
+body.arrastando .app-shell { transition: none; }
+.sidebar, .details-panel { position: relative; }
+
+/* alças de largura */
+.alca { position: absolute; top: 0; bottom: 0; z-index: 30; width: 9px; cursor: col-resize; touch-action: none; }
+.alca::after { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: transparent; transition: background .2s, box-shadow .2s; }
+.alca:hover::after, .alca:focus-visible::after, body.arrastando .alca::after { background: var(--borda-3); box-shadow: 0 0 12px rgba(255, 255, 255, .18); }
+.alca:focus-visible { outline: none; }
+.sidebar > .alca { right: -5px; }
+.details-panel > .alca { left: -5px; }
+
+/* botão de recolher */
+.collapse-rooms { position: absolute; top: 18px; right: 10px; width: 30px; height: 30px; border-radius: 8px; color: var(--texto-3); transition: color .2s, background .2s, transform .45s var(--mola); }
+.collapse-rooms:hover { color: var(--texto); background: var(--fundo-4); }
+.collapse-rooms svg { width: 17px; height: 17px; transition: transform .45s var(--mola); }
+.brand { padding-right: 40px; }
+
+/* ------------------------------------------------------------ trilho recolhido (acima de 760 px) */
+@media (min-width: 761px) {
+  body.trilho-recolhido { --trilho: 68px; }
+  body.trilho-recolhido .sidebar { padding-left: 10px; padding-right: 10px; }
+  body.trilho-recolhido .brand { justify-content: center; padding: 0; margin-bottom: 10px; }
+  body.trilho-recolhido .brand-nome, body.trilho-recolhido .brand-versao,
+  body.trilho-recolhido .sidebar-label, body.trilho-recolhido .archived-rooms,
+  body.trilho-recolhido .room-item-text, body.trilho-recolhido .room-more,
+  body.trilho-recolhido .endereco, body.trilho-recolhido .dock-nome,
+  body.trilho-recolhido .new-room kbd { display: none; }
+  body.trilho-recolhido .collapse-rooms { position: static; align-self: center; margin-bottom: 12px; }
+  body.trilho-recolhido .collapse-rooms svg { transform: scaleX(-1); }
+  body.trilho-recolhido .new-room { justify-content: center; width: 44px; height: 38px; margin: 0 auto 12px; padding: 0; font-size: 0; gap: 0; }
+  body.trilho-recolhido .new-room svg { width: 16px; height: 16px; }
+  body.trilho-recolhido .room-list { align-items: center; gap: 6px; overflow-x: hidden; }
+  body.trilho-recolhido .room-item { width: 44px; justify-content: center; }
+  body.trilho-recolhido .room-open { justify-content: center; padding: 0; width: 44px; height: 40px; }
+  body.trilho-recolhido .room-open > svg { display: none; }
+  body.trilho-recolhido .room-open::before {
+    content: attr(data-inicial); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
+    font-weight: 600; font-size: 14px; color: var(--texto-2); background: var(--fundo-3); border: 1px solid var(--borda-2);
+    transition: transform .35s var(--mola), background .2s, color .2s, border-color .2s;
+  }
+  body.trilho-recolhido .room-item:hover .room-open::before { transform: translateY(-1px) scale(1.06); color: var(--texto); border-color: var(--borda-3); }
+  body.trilho-recolhido .room-item.selected .room-open::before { color: var(--fundo); background: var(--texto); border-color: transparent; }
+  body.trilho-recolhido .room-ind { display: none !important; }
+  body.trilho-recolhido .room-running { position: absolute; top: 4px; right: 3px; }
+  body.trilho-recolhido .connection { justify-content: center; font-size: 0; gap: 0; }
+  body.trilho-recolhido .sidebar-bottom { align-items: center; padding-left: 0; padding-right: 0; }
+  body.trilho-recolhido .usage-dock { flex-direction: column; gap: 8px; }
+  body.trilho-recolhido .dock-item { padding: 2px; }
+}
+.sidebar .brand-nome, .sidebar .room-item-text { transition: opacity .3s; }
+
+/* ------------------------------------------------------------ painel recolhido (acima de 1180 px) */
+@media (min-width: 1181px) {
+  #toggle-details { display: inline-grid; }
+  .details-panel { transition: opacity .35s var(--suave), border-color .35s; overflow: hidden; }
+  body.painel-recolhido { --painel: 0px; }
+  body.painel-recolhido .details-panel { opacity: 0; pointer-events: none; border-left-color: transparent; }
+  body.painel-recolhido .details-panel > * { min-width: 280px; }
+}
+@media (max-width: 1180px) { .details-panel > .alca { display: none; } }
+@media (max-width: 760px) { .sidebar > .alca, .collapse-rooms { display: none; } }
+
+/* ------------------------------------------------------------ anéis de uso */
+.usage-rings { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 9px; }
+.usage-ring { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; }
+.usage-dial { position: relative; display: grid; place-items: center; width: 46px; height: 46px; }
+.usage-dial.mini { width: 30px; height: 30px; }
+svg.anel { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.anel-base { fill: none; stroke: var(--borda-2); }
+.anel-arco { fill: none; stroke: var(--cor, var(--texto-2)); stroke-linecap: round; transition: stroke-dashoffset 1s var(--mola), stroke .3s; animation: anel-enche 1.1s var(--mola); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--cor, #fff) 45%, transparent)); }
+@keyframes anel-enche { from { stroke-dashoffset: var(--de); } }
+.nivel-medio .anel-arco { stroke: color-mix(in srgb, var(--cor, #fff) 45%, var(--alerta)); }
+.nivel-alto .anel-arco { stroke: var(--alerta); filter: drop-shadow(0 0 4px rgba(191, 162, 106, .55)); }
+.nivel-cheio .anel-arco { stroke: var(--critico); filter: drop-shadow(0 0 5px rgba(196, 115, 110, .6)); }
+.nivel-cheio .usage-dial { animation: alerta-anel 2.2s ease-in-out infinite; }
+@keyframes alerta-anel { 50% { transform: scale(1.05); } }
+.usage-value { position: relative; font: 600 11px/1 var(--mono); color: var(--texto); letter-spacing: -.02em; }
+.usage-dial.mini .usage-value { font-size: 9.5px; font-weight: 500; color: var(--texto-2); }
+.usage-label { font: 10px var(--mono); color: var(--texto-3); text-align: center; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usage-ring .usage-reset { font-size: 9.5px; text-align: center; }
+
+/* painel de uso no rodapé das salas */
+.usage-dock { display: flex; justify-content: space-between; gap: 4px; margin: 0 0 10px; }
+.dock-item { display: flex; align-items: center; gap: 6px; padding: 3px 6px 3px 3px; border-radius: 999px; color: var(--texto-3); transition: background .2s, color .2s, transform .35s var(--mola); }
+.dock-item:hover { background: var(--fundo-3); color: var(--texto); transform: translateY(-1px); }
+.dock-item.sem-uso .anel-arco { stroke: transparent; filter: none; }
+.dock-nome { font-size: 11px; }
+.dock-item.falando .usage-dial, .participant.falando > .seat { animation: fala 1.4s ease-in-out infinite; border-radius: 50%; }
+@keyframes fala { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cor) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 7px transparent; } }
+
+/* participante que está escrevendo agora */
+.participant { position: relative; transition: background .3s; }
+.participant.falando::before { content: ""; position: absolute; left: -20px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, transparent, var(--cor), transparent); background-size: 100% 200%; animation: corre 1.6s linear infinite; }
+@keyframes corre { from { background-position: 0 -100%; } to { background-position: 0 100%; } }
+
+/* ------------------------------------------------------------ escrita ao vivo */
+.message.transient .message-content > :last-child::after { width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -3px; border-radius: 1px; box-shadow: 0 0 8px var(--cor); animation: cursor 1.05s ease-in-out infinite; }
+@keyframes cursor { 0%, 45% { opacity: 1; } 55%, 100% { opacity: .15; } }
+.message.transient .message-badge.ao-vivo { background: linear-gradient(90deg, var(--cor) 0%, #fff 50%, var(--cor) 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: brilho-texto 2s linear infinite; }
+@keyframes brilho-texto { to { background-position: -200% 0; } }
+.message.transient .message-content { mask-image: linear-gradient(180deg, #000 calc(100% - 1.6em), rgba(0, 0, 0, .55)); -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 1.6em), rgba(0, 0, 0, .55)); }
+
+/* ------------------------------------------------------------ microinterações */
+.com-onda { overflow: hidden; }
+.com-onda-pos { position: relative; }
+.onda { position: absolute; z-index: 0; border-radius: 50%; background: currentColor; opacity: .16; transform: scale(0); pointer-events: none; animation: onda .65s var(--suave) forwards; }
+@keyframes onda { to { transform: scale(1); opacity: 0; } }
+.room-item { transition: color .2s, background .2s, transform .35s var(--mola); }
+.room-item:hover { transform: translateX(2px); }
+.starter { transition: transform .4s var(--mola), background .25s, border-color .25s, box-shadow .4s var(--mola); }
+.starter:hover { transform: translateY(-3px); border-color: var(--borda-3); box-shadow: 0 14px 34px rgba(0, 0, 0, .35); }
+.send-button:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(255, 255, 255, .22); }
+.icon-button { transition: color .2s, background .2s, transform .3s var(--mola); }
+.icon-button:active:not(:disabled) { transform: scale(.9); }
+.panel-tab { transition: color .25s, transform .3s var(--mola); }
+.panel-tab:active { transform: scale(.96); }
+.participant:hover { background: rgba(255, 255, 255, .015); }
+.modal[open] { animation: modal-entra .45s var(--mola); }
+@keyframes modal-entra { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+.message.nova { animation: surge-mais .7s var(--mola); }
+@keyframes surge-mais { from { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+.toast:not([hidden]) { animation: toast .45s var(--mola); }
+
+/* ajustes da verificação visual */
+.usage-dock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
+.dock-item { flex-direction: column; gap: 3px; padding: 5px 2px 4px; border-radius: 10px; }
+.dock-nome { font-size: 10.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 761px) { body.trilho-recolhido .usage-dock { display: flex; } }
+.message.transient .message-content > :is(ul, ol):last-child::after { display: none; }
+.message.transient .message-content > :is(ul, ol):last-child > li:last-child::after { content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -3px; border-radius: 1px; background: var(--cor); box-shadow: 0 0 8px var(--cor); animation: cursor 1.05s ease-in-out infinite; }
+
+/* ================================================================== Synapse 1.4.1 · tema neon
+   Preto profundo, branco limpo e neon só onde carrega sentido: quem fala (GPT menta, Claude laranja,
+   Gemini azul elétrico), foco, seleção e estados. Paleta dos participantes conferida para daltonismo
+   (ΔE ≥ 14 em todos os pares sobre o fundo dos cartões). */
+:root {
+  --fundo: #030304; --fundo-2: #08080A; --fundo-3: #111114; --fundo-4: #1A1A20;
+  --borda: rgba(255, 255, 255, .07); --borda-2: rgba(255, 255, 255, .12); --borda-3: rgba(255, 255, 255, .28);
+  --texto: #FAFAFA; --texto-2: #B4B4BC; --texto-3: #7C7C88;
+  --voce: #FAFAFA; --codex: #00E5A0; --claude: #FF6A1F; --gemini: #3D8BFF;
+  --neon: #00F0FF; --neon-2: #FF2BD6;
+  --ok: #39FF88; --alerta: #FFD60A; --critico: #FF2E63; --perigo: #FF2E63;
+  --brilho: 0 0 18px color-mix(in srgb, var(--neon) 35%, transparent);
+}
+html, body { background: var(--fundo); }
+::selection { background: color-mix(in srgb, var(--neon) 32%, transparent); color: #fff; }
+:focus-visible { outline: 1px solid var(--neon); outline-offset: 2px; box-shadow: var(--brilho); }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .1); }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--neon) 45%, transparent); }
+.sidebar, .details-panel { background: var(--fundo-2); }
+.room-menu, .mode-menu { background: var(--fundo-3); border-color: var(--borda-2); box-shadow: 0 18px 50px rgba(0, 0, 0, .7); }
+.modal { background: var(--fundo-2); box-shadow: 0 30px 90px rgba(0, 0, 0, .8), 0 0 60px color-mix(in srgb, var(--neon) 6%, transparent); }
+.seat { box-shadow: 0 0 8px color-mix(in srgb, var(--cor) 70%, transparent); }
+.message-badge.ao-vivo, .mencao { text-shadow: 0 0 10px color-mix(in srgb, var(--cor) 55%, transparent); }
+.brand-nome { background: linear-gradient(90deg, #fff 0%, #fff 40%, var(--neon) 75%, var(--neon-2) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.room-item.selected { box-shadow: inset 2px 0 0 var(--neon); background: linear-gradient(90deg, color-mix(in srgb, var(--neon) 9%, transparent), transparent 70%); }
+.tinta { background: var(--neon); box-shadow: 0 0 10px var(--neon); height: 2px; }
+.connection.online > span { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent), 0 0 10px var(--ok); }
+.send-button:hover:not(:disabled), .primary-button:hover:not(:disabled), .new-room:hover { box-shadow: 0 0 0 1px var(--neon), 0 6px 26px color-mix(in srgb, var(--neon) 35%, transparent); }
+.mode-button:hover:not(:disabled), .mode-button[aria-expanded="true"] { border-color: color-mix(in srgb, var(--neon) 55%, transparent); box-shadow: var(--brilho); }
+.composer:focus-within { border-color: color-mix(in srgb, var(--neon) 45%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--neon) 18%, transparent), 0 10px 40px color-mix(in srgb, var(--neon) 8%, transparent); }
+.anel-arco { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--cor, #fff) 65%, transparent)); }
+.nivel-alto .anel-arco { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--alerta) 70%, transparent)); }
+.nivel-cheio .anel-arco { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--critico) 75%, transparent)); }
+.error-banner { border-color: color-mix(in srgb, var(--critico) 55%, transparent); background: color-mix(in srgb, var(--critico) 9%, transparent); color: #FFD3DD; }
+
+/* ------------------------------------------------------------ abas Interface | Análises */
+.vista-tabs { position: relative; display: inline-flex; gap: 2px; padding: 3px; margin-left: auto; border: 1px solid var(--borda-2); border-radius: 999px; background: var(--fundo-2); flex: none; }
+.vista-tinta { position: absolute; top: 3px; bottom: 3px; left: 3px; width: 0; border-radius: 999px; background: var(--texto); box-shadow: 0 0 0 1px color-mix(in srgb, var(--neon) 60%, transparent), 0 0 22px color-mix(in srgb, var(--neon) 40%, transparent); transition: transform .55s var(--mola), width .55s var(--mola); pointer-events: none; }
+.vista-tab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--texto-2); transition: color .3s; }
+.vista-tab svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.vista-tab:hover:not(.active) { color: var(--texto); }
+.vista-tab.active { color: #050506; }
+.vista-tab:focus-visible { box-shadow: none; outline-offset: -2px; }
+@media (max-width: 760px) { .vista-tab { padding: 6px 10px; font-size: 0; gap: 0; } .vista-tab svg { width: 16px; height: 16px; } }
+
+/* Análises ocupa o lugar da conversa; a faixa de modo e o compositor saem junto */
+body.vista-analises .faixa, body.vista-analises .conversation, body.vista-analises .composer-area { display: none; }
+.analytics { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 20px 32px 28px; }
+.analytics[hidden] { display: none; }
+.analytics:not([hidden]) { animation: vista-entra .55s var(--mola); }
+body:not(.vista-analises) .conversation { animation: vista-entra .45s var(--mola); }
+@keyframes vista-entra { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } }
+.analytics.carregando .av-grade, .analytics.carregando .av-kpis { opacity: .55; transition: opacity .2s; }
+
+.av-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; }
+.av-seg { display: inline-flex; padding: 2px; border: 1px solid var(--borda-2); border-radius: 9px; background: var(--fundo-2); }
+.av-seg button { padding: 5px 11px; border-radius: 7px; font-size: 12px; color: var(--texto-2); transition: color .2s, background .25s, box-shadow .3s; }
+.av-seg button:hover { color: var(--texto); }
+.av-seg button[aria-pressed="true"] { color: #050506; background: var(--texto); box-shadow: 0 0 14px color-mix(in srgb, var(--neon) 30%, transparent); }
+.av-estado { margin-left: auto; font: 11px var(--mono); color: var(--texto-3); }
+
+.analytics { container-type: inline-size; }
+.av-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+@container (max-width: 860px) { .av-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (max-width: 480px) { .av-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.av-kpi { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--borda); border-radius: 12px; background: linear-gradient(180deg, var(--fundo-3), var(--fundo-2)); overflow: hidden; transition: border-color .3s, transform .4s var(--mola); }
+.av-kpi:hover { border-color: var(--borda-3); transform: translateY(-2px); }
+.av-kpi::after { content: ""; position: absolute; inset: auto 0 0; height: 1px; background: linear-gradient(90deg, transparent, var(--borda-3), transparent); }
+.av-kpi.neon { border-color: color-mix(in srgb, var(--neon) 35%, transparent); }
+.av-kpi.neon::after { background: linear-gradient(90deg, transparent, var(--neon), transparent); box-shadow: 0 0 12px var(--neon); }
+.av-kpi-rotulo { font: 500 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--texto-3); }
+.av-kpi-valor { font-size: clamp(19px, 2.4cqi, 26px); white-space: nowrap; font-weight: 600; letter-spacing: -.03em; color: var(--texto); font-variant-numeric: tabular-nums; }
+.av-kpi-sub { font-size: 11.5px; color: var(--texto-3); }
+.analytics.anima .av-kpi { animation: surge-mais .7s var(--mola) both; animation-delay: calc(var(--i) * 45ms); }
+
+.av-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.av-card { min-width: 0; padding: 16px 18px 14px; border: 1px solid var(--borda); border-radius: 14px; background: var(--fundo-2); transition: border-color .3s; }
+.av-card:hover { border-color: var(--borda-2); }
+.av-largo { grid-column: 1 / -1; }
+.av-card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.av-card h3 { font-size: 14px; font-weight: 600; letter-spacing: -.01em; color: var(--texto); }
+.av-card header p { margin-top: 3px; font-size: 12px; color: var(--texto-3); }
+@media (max-width: 1100px) { .av-grade { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .analytics { padding: 14px 14px 22px; } }
+
+.av-legenda { display: flex; gap: 14px; flex-wrap: wrap; }
+.av-leg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto-2); }
+.av-ponto { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--cor); box-shadow: 0 0 8px color-mix(in srgb, var(--cor) 70%, transparent); flex: none; }
+
+.av-plot { width: 100%; min-height: 60px; }
+.av-plot svg.av-svg { display: block; width: 100%; height: auto; overflow: visible; stroke: none; stroke-width: 0; } /* anula a regra global dos ícones */
+.av-grade-linha { stroke: var(--borda); stroke-width: 1; }
+.av-base { stroke: var(--borda-3); stroke-width: 1; }
+.av-eixo { font: 10.5px var(--mono); fill: var(--texto-3); }
+.av-eixo.forte { fill: var(--texto-2); font-family: var(--fonte); font-size: 12px; }
+.av-barra { fill: var(--cor); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cor) 45%, transparent)); transition: opacity .2s; }
+.av-alvo { fill: transparent; }
+.av-coluna:hover .av-alvo { fill: rgba(255, 255, 255, .035); }
+.av-svg:has(.av-foco) .av-coluna:not(:has(.av-foco)) .av-barra { opacity: .4; }
+.analytics.anima .av-barra { transform-box: fill-box; transform-origin: bottom; animation: av-sobe .8s var(--mola) both; animation-delay: calc(var(--i) * 14ms); }
+@keyframes av-sobe { from { transform: scaleY(0); } }
+.av-celula { fill: var(--cor); fill-opacity: var(--a); stroke: transparent; transition: stroke .15s; }
+.av-celula.vazia { fill: var(--fundo-4); fill-opacity: 1; }
+.av-celula.av-foco { stroke: var(--texto); stroke-width: 1.5; }
+.analytics.anima .av-celula:not(.vazia) { animation: av-acende .6s var(--suave) both; animation-delay: calc(var(--i) * 12ms); }
+@keyframes av-acende { from { fill-opacity: 0; } }
+
+.av-hbars { display: flex; flex-direction: column; gap: 11px; }
+.av-hbar-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+.av-hbar-nome { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12.5px; color: var(--texto); }
+.av-hbar-nome b { font-weight: 500; white-space: nowrap; }
+.av-hbar-nome small { font-size: 11.5px; color: var(--texto-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.av-hbar-valor { font: 500 12px var(--mono); color: var(--texto); white-space: nowrap; }
+.av-hbar-trilho { height: 6px; border-radius: 6px; background: var(--fundo-4); overflow: hidden; }
+.av-hbar-trilho span { display: block; width: var(--w); height: 100%; border-radius: 6px; background: linear-gradient(90deg, color-mix(in srgb, var(--cor) 55%, transparent), var(--cor)); box-shadow: 0 0 10px color-mix(in srgb, var(--cor) 60%, transparent); transition: width .8s var(--mola); }
+.analytics.anima .av-hbar-trilho span { animation: av-estende .9s var(--mola) both; animation-delay: calc(var(--i) * 50ms); }
+@keyframes av-estende { from { width: 0; } }
+
+.av-tabela { overflow-x: auto; }
+.av-tabela table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.av-tabela th { padding: 0 10px 8px; text-align: left; font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); border-bottom: 1px solid var(--borda-2); white-space: nowrap; }
+.av-tabela td { padding: 8px 10px; border-bottom: 1px solid var(--borda); color: var(--texto-2); white-space: nowrap; }
+.av-tabela td:first-child { color: var(--texto); }
+.av-tabela td:first-child .av-ponto { margin-right: 8px; vertical-align: 0; }
+.av-tabela .num, .av-tabela th:nth-child(n+4) { text-align: right; font-variant-numeric: tabular-nums; }
+.av-tabela .mono { font: 11.5px var(--mono); }
+.av-tabela .forte { color: var(--texto); font-weight: 600; }
+.av-tabela tbody tr { transition: background .2s; }
+.av-tabela tbody tr:hover { background: color-mix(in srgb, var(--cor) 6%, transparent); }
+.av-vazio { padding: 18px 0; font-size: 13px; color: var(--texto-3); }
+.av-nota { margin-top: 12px; font-size: 11.5px; color: var(--texto-3); }
+.av-nota:empty { display: none; }
+
+.av-tip { position: absolute; top: 0; left: 0; z-index: 40; min-width: 160px; padding: 9px 11px; border: 1px solid var(--borda-2); border-radius: 10px; background: rgba(8, 8, 10, .94); backdrop-filter: blur(8px); box-shadow: 0 12px 40px rgba(0, 0, 0, .6); pointer-events: none; font-size: 12px; }
+.av-tip strong { display: block; margin-bottom: 6px; font-weight: 600; color: var(--texto); }
+.av-tip-linha { display: flex; align-items: center; gap: 7px; padding: 1px 0; color: var(--texto-2); }
+.av-tip-linha em { font-style: normal; flex: 1; }
+.av-tip-linha b { font: 500 12px var(--mono); color: var(--texto); }
+.av-tip-linha:not([class*="role-"]) { margin-top: 4px; padding-top: 5px; border-top: 1px solid var(--borda); }
+
+/* ================================================================== Synapse 1.5 · preto como cor principal
+   Fundo #000 puro e superfícies quase pretas. As ações principais (enviar, nova sala, botões primários, aba e
+   filtro ativos) deixam de ser brancas: são preto profundo com contorno neon, que acende ao passar o mouse.
+   O branco fica para o texto; o neon, para quem fala, foco e estados. */
+:root {
+  --fundo: #000000; --fundo-2: #050506; --fundo-3: #0B0B0E; --fundo-4: #141418;
+  --principal: #000000; --principal-borda: color-mix(in srgb, var(--neon) 55%, transparent);
+}
+.send-button, .primary-button, .new-room, #resume-job {
+  background: var(--principal); color: var(--texto);
+  border: 1px solid var(--principal-borda);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .9), 0 0 14px color-mix(in srgb, var(--neon) 16%, transparent);
+  transition: transform .35s var(--mola), box-shadow .3s, border-color .3s, color .2s, opacity .2s;
+}
+.send-button svg { stroke: var(--neon); }
+.send-button:hover:not(:disabled), .primary-button:hover:not(:disabled), .new-room:hover, #resume-job:hover:not(:disabled) {
+  background: var(--principal); color: #fff; border-color: var(--neon);
+  box-shadow: 0 0 0 1px var(--neon), 0 0 26px color-mix(in srgb, var(--neon) 45%, transparent), inset 0 0 14px color-mix(in srgb, var(--neon) 12%, transparent);
+}
+.send-button:disabled { opacity: .3; box-shadow: none; }
+.new-room kbd { color: var(--texto-3); border-color: var(--borda-2); }
+.primary-button.perigo { background: var(--principal); color: var(--critico); border-color: color-mix(in srgb, var(--critico) 60%, transparent); box-shadow: 0 0 14px color-mix(in srgb, var(--critico) 18%, transparent); }
+.primary-button.perigo:hover:not(:disabled) { background: var(--principal); color: #fff; border-color: var(--critico); box-shadow: 0 0 0 1px var(--critico), 0 0 26px color-mix(in srgb, var(--critico) 45%, transparent); }
+.vista-tabs, .av-seg { background: var(--fundo-2); }
+.vista-tinta { background: var(--principal); box-shadow: inset 0 0 0 1px var(--neon), 0 0 18px color-mix(in srgb, var(--neon) 45%, transparent), inset 0 0 12px color-mix(in srgb, var(--neon) 18%, transparent); }
+.vista-tab.active { color: #fff; text-shadow: 0 0 10px color-mix(in srgb, var(--neon) 70%, transparent); }
+.av-seg button[aria-pressed="true"] { color: #fff; background: var(--principal); box-shadow: inset 0 0 0 1px var(--neon), 0 0 14px color-mix(in srgb, var(--neon) 35%, transparent); }
+.sidebar, .details-panel { border-color: var(--borda); }
+@media (prefers-reduced-motion: reduce) { .send-button, .primary-button, .new-room { transition: none; } }
+#resume-job { font-weight: 500; }
+body.trilho-recolhido .room-item.selected .room-open::before { color: #fff; background: var(--principal); border: 1px solid var(--neon); box-shadow: 0 0 12px color-mix(in srgb, var(--neon) 40%, transparent); }
+
+/* 1.5 — Resposta direta a uma mensagem. O aviso acima da caixa de texto mostra a quem e a que trecho você
+   responde, na cor de quem escreveu; a citação na mensagem enviada leva de volta ao original. */
+.reply-chip { display: flex; align-items: stretch; gap: 4px; margin: 8px 8px 0; border-left: 2px solid var(--cor); border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--cor) 7%, var(--fundo-3)); box-shadow: inset 0 0 18px color-mix(in srgb, var(--cor) 6%, transparent); }
+.reply-chip:not([hidden]) { animation: entrada-resposta .32s var(--mola, ease-out); }
+.reply-chip-text { flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; column-gap: 7px; align-items: center; padding: 7px 4px 7px 10px; text-align: left; }
+.reply-chip-text svg { grid-row: span 2; width: 14px; height: 14px; fill: none; stroke: var(--cor); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.reply-chip-text strong { font-size: 11.5px; font-weight: 600; color: var(--cor); }
+.reply-chip-text span { font-size: 12.5px; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reply-chip-close { width: 30px; flex: none; font-size: 17px; line-height: 1; color: var(--texto-3); border-radius: 0 8px 8px 0; transition: color .2s, background .2s; }
+.reply-chip-close:hover { color: #fff; background: color-mix(in srgb, var(--cor) 16%, transparent); }
+.composer.respondendo { border-color: color-mix(in srgb, var(--neon) 30%, transparent); }
+.reply-quote.trecho span { font-style: italic; color: var(--texto); }
+.reply-message svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes entrada-resposta { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .reply-chip:not([hidden]) { animation: none; } }
+
+/* 1.6 — Contas oficiais. Cada participante tem um botão próprio: "Conectar" aceso na cor do participante quando
+   falta login, "Reconectar" discreto quando a conta está ativa, e um pulso enquanto o login oficial está aberto. */
+.connect-account { align-self: flex-start; margin-top: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; color: var(--texto-3);
+  border: 1px solid var(--borda-2); background: transparent; transition: color .2s, border-color .2s, box-shadow .3s, background .2s; }
+.connect-account:hover { color: var(--texto); border-color: var(--borda-3); }
+.participant:not(:hover):not(:focus-within) .connect-account:not(.destaque) { opacity: .55; }
+.connect-account.destaque { color: #fff; border-color: color-mix(in srgb, var(--cor, var(--neon)) 70%, transparent);
+  background: color-mix(in srgb, var(--cor, var(--neon)) 10%, var(--principal, #000)); box-shadow: 0 0 14px color-mix(in srgb, var(--cor, var(--neon)) 28%, transparent); }
+.connect-account.destaque:hover { border-color: var(--cor, var(--neon)); box-shadow: 0 0 0 1px var(--cor, var(--neon)), 0 0 22px color-mix(in srgb, var(--cor, var(--neon)) 45%, transparent); }
+.connect-account.aguardando { animation: conta-pulso 1.6s ease-in-out infinite; }
+@keyframes conta-pulso { 50% { box-shadow: 0 0 22px color-mix(in srgb, var(--cor, var(--neon)) 55%, transparent); } }
+
+.account-modal { width: min(520px, calc(100vw - 32px)); border-top: 2px solid var(--cor, var(--neon)); }
+.account-state { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--borda-2); border-radius: 10px;
+  background: color-mix(in srgb, var(--cor, var(--neon)) 5%, var(--fundo-3)); font-size: 13px; color: var(--texto); line-height: 1.45; }
+.account-pulse { flex: none; width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--texto-3); }
+.estado-pending .account-pulse { background: var(--cor, var(--neon)); box-shadow: 0 0 0 0 var(--cor, var(--neon)); animation: conta-sinal 1.4s ease-out infinite; }
+.estado-completed .account-pulse { background: var(--ok); box-shadow: 0 0 12px var(--ok); }
+.estado-failed .account-pulse, .estado-cancelled .account-pulse { background: var(--critico); }
+.estado-completed .account-state { border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.estado-failed .account-state { border-color: color-mix(in srgb, var(--critico) 45%, transparent); }
+@keyframes conta-sinal { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cor, var(--neon)) 70%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+.account-device { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px; margin-top: 12px; padding: 12px 14px; border: 1px dashed var(--borda-3); border-radius: 10px; }
+.account-device span { grid-column: 1 / -1; font-size: 12px; color: var(--texto-3); }
+.account-device strong { font: 600 22px/1.2 var(--mono); letter-spacing: .14em; color: #fff; }
+.account-link { display: inline-flex; margin-top: 12px; text-decoration: none; }
+.account-code { margin-top: 4px; }
+.account-code input { font-family: var(--mono); font-size: 12px; }
+.account-modal .modal-actions { align-items: center; }
+.account-modal #account-alt { margin-right: auto; }
+
+.usage-origins { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.usage-origin { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 11px; line-height: 1.35; }
+.usage-origin-nome { font-family: var(--mono); color: var(--texto-3); }
+.usage-origin-valor { display: flex; flex-direction: column; color: var(--texto-2); min-width: 0; overflow-wrap: anywhere; }
+.usage-origin-valor .pausa { color: var(--alerta); }
+@media (prefers-reduced-motion: reduce) { .connect-account.aguardando, .estado-pending .account-pulse { animation: none; } }
+
+/* 1.6 — Servidores MCP do usuário por sala (dentro de Configurações → Acesso, com a integração total). */
+.user-mcp { margin: 4px 0 6px 26px; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 10px; background: var(--fundo); }
+.user-mcp-title { font-size: 12.5px; color: var(--texto-2); margin: 0 0 4px; }
+.user-mcp-title span { color: var(--texto-3); }
+.user-mcp-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; }
+.modal .user-mcp-item { margin: 4px 0; font-size: 12.5px; }
+.user-mcp-item strong { font: 500 12px var(--mono); color: var(--texto); }
+.user-mcp-item small { color: var(--texto-3); font-size: 11px; }
+.user-mcp-item input:disabled + span { opacity: .55; }
+
+/* ================================================================== Synapse 1.7 · sóbrio
+   Pedido de 26/11: menos neon e o nome sem cor. O preto continua a cor principal; os destaques passam a ser
+   brancos e cinzas, sem halos. A cor fica só para identificar quem fala (pontos, anéis e marcas), em tons um
+   pouco menos saturados, e para os estados de alerta. Esta camada substitui os brilhos das camadas 1.4.1 e 1.5. */
+:root {
+  --codex: #00AE80; --claude: #D95F19; --gemini: #437DDE; /* validador dataviz, modo escuro sobre #050506: todas as verificações passam (CVD ΔE ≥ 8,2) */
+  --neon: #E4E4EA; --neon-2: #E4E4EA; --brilho: none;
+  --ok: #4CC38A; --alerta: #E8B949; --critico: #E5576F; --perigo: #E5576F;
+  --principal-borda: var(--borda-3);
+}
+.brand-nome { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--texto); font-weight: 600; letter-spacing: -.01em; }
+.brand-versao { color: var(--texto-3); }
+:focus-visible { outline: 1px solid rgba(255, 255, 255, .55); box-shadow: none; }
+::selection { background: rgba(255, 255, 255, .2); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .22); }
+.modal { box-shadow: 0 30px 90px rgba(0, 0, 0, .8); }
+.seat { box-shadow: none; }
+.message-badge.ao-vivo, .mencao, .vista-tab.active { text-shadow: none; }
+.room-item.selected { box-shadow: inset 2px 0 0 var(--texto); background: rgba(255, 255, 255, .05); }
+.tinta { background: var(--texto); box-shadow: none; }
+.connection.online > span { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 16%, transparent); }
+.send-button, .primary-button, .new-room, #resume-job { border-color: var(--borda-3); box-shadow: none; }
+.send-button svg { stroke: var(--texto); }
+.send-button:hover:not(:disabled), .primary-button:hover:not(:disabled), .new-room:hover, #resume-job:hover:not(:disabled) {
+  background: var(--fundo-4); color: #fff; border-color: rgba(255, 255, 255, .5); box-shadow: none; }
+.primary-button.perigo, .primary-button.perigo:hover:not(:disabled) { box-shadow: none; }
+.primary-button.perigo:hover:not(:disabled) { background: color-mix(in srgb, var(--critico) 14%, var(--principal)); }
+.mode-button:hover:not(:disabled), .mode-button[aria-expanded="true"] { border-color: var(--borda-3); box-shadow: none; }
+.composer:focus-within, .composer.respondendo { border-color: var(--borda-3); box-shadow: 0 0 0 4px rgba(255, 255, 255, .02), 0 18px 50px rgba(0, 0, 0, .45); }
+.vista-tinta { background: var(--fundo-4); box-shadow: inset 0 0 0 1px var(--borda-3); }
+.av-seg button[aria-pressed="true"] { background: var(--fundo-4); box-shadow: inset 0 0 0 1px var(--borda-3); }
+body.trilho-recolhido .room-item.selected .room-open::before { border-color: rgba(255, 255, 255, .45); box-shadow: none; }
+.anel-arco, .nivel-alto .anel-arco, .nivel-cheio .anel-arco { filter: none; }
+.message.transient .message-content > :last-child::after,
+.message.transient .message-content > :is(ul, ol):last-child > li:last-child::after { box-shadow: none; }
+.av-kpi.neon { border-color: var(--borda-2); }
+.av-kpi.neon::after { background: linear-gradient(90deg, transparent, var(--borda-3), transparent); box-shadow: none; }
+.av-ponto, .av-barra, .av-hbar-trilho span { box-shadow: none; filter: none; }
+.connect-account.destaque, .connect-account.destaque:hover { box-shadow: none; }
+.connect-account.destaque { background: color-mix(in srgb, var(--cor, #fff) 8%, var(--principal, #000)); }
+@keyframes conta-pulso { 50% { border-color: var(--cor, var(--texto)); } }
+.estado-completed .account-pulse { box-shadow: none; }
+.alca:hover::after, .alca:focus-visible::after, body.arrastando .alca::after { box-shadow: none; }
+
+/* ------------------------------------------------------------ rodapé de uso padronizado (1.7) */
+.usage-dial.duplo { width: 34px; height: 34px; }
+.anel.interno .anel-arco { stroke-opacity: .72; }
+.anel.sem-dado .anel-arco { stroke: transparent; }
+.anel.sem-dado .anel-base { stroke-dasharray: 2 3; }
+.anel.nivel-medio .anel-arco { stroke: color-mix(in srgb, var(--cor, #fff) 45%, var(--alerta)); }
+.anel.nivel-alto .anel-arco { stroke: var(--alerta); }
+.anel.nivel-cheio .anel-arco { stroke: var(--critico); }
+.dock-item.esgotado .usage-dial { animation: alerta-anel 2.2s ease-in-out infinite; }
+.dock-vals { display: inline-flex; align-items: baseline; gap: 3px; font: 500 9.5px/1 var(--mono); color: var(--texto-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dock-vals i { font-style: normal; color: var(--texto-3); }
+.dock-vals b { font-weight: 500; }
+.dock-vals b.nivel-alto { color: var(--alerta); }
+.dock-vals b.nivel-cheio { color: var(--critico); }
+.usage-ring.sem-dado .anel-arco { stroke: transparent; }
+.usage-ring.sem-dado .anel-base { stroke-dasharray: 2 3; }
+@media (min-width: 761px) { body.trilho-recolhido .dock-vals { display: none; } }
+
+/* ------------------------------------------------------------ tela cheia (F11, 1.7) */
+html.tela-cheia { --barra: 0px; }
+html.tela-cheia .barra-janela { display: none; }
+
+/* ------------------------------------------------------------ Análises 1.7: mais parâmetros e interação */
+.av-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@container (max-width: 640px) { .av-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+button.av-leg { padding: 3px 9px 3px 7px; border: 1px solid var(--borda); border-radius: 999px; transition: opacity .25s, border-color .2s, color .2s; }
+button.av-leg:hover { border-color: var(--borda-3); color: var(--texto); }
+button.av-leg.oculto { opacity: .4; }
+button.av-leg.oculto .av-ponto { background: transparent; box-shadow: inset 0 0 0 1.5px var(--cor); }
+.av-partes { gap: 10px; }
+.av-partes .av-leg { font-size: 11px; color: var(--texto-3); --cor: var(--texto-2); }
+.av-tip-linha.simples { margin-top: 0; padding-top: 1px; border-top: 0; }
+.av-tip-linha.simples em { color: var(--texto-3); }
+
+.av-linha { fill: none; stroke: var(--cor); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; opacity: .55; }
+.av-marca { fill: var(--fundo); stroke: var(--cor); stroke-width: 1.8; transition: r .2s var(--mola), fill .2s; }
+.av-marca.av-foco { r: 6; fill: var(--cor); }
+.av-mira { stroke: var(--borda-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.av-serie.mirando .av-mira { opacity: 1; }
+.av-serie.fixo .av-mira { stroke: var(--texto-2); stroke-dasharray: none; }
+.av-sonda { cursor: crosshair; }
+.av-limite { stroke: var(--alerta); stroke-width: 1; stroke-dasharray: 5 4; opacity: .7; }
+.av-limite-rotulo { fill: var(--alerta); }
+.analytics.anima .av-linha { stroke-dasharray: 1; stroke-dashoffset: 1; animation: av-traca 1.3s var(--suave) forwards; animation-delay: calc(var(--i) * 120ms); }
+@keyframes av-traca { to { stroke-dashoffset: 0; } }
+.analytics.anima .av-marca { transform-box: fill-box; transform-origin: center; animation: av-pinga .5s var(--mola) both; animation-delay: calc(300ms + var(--i) * 18ms); }
+@keyframes av-pinga { from { transform: scale(0); } }
+
+.av-comp-trilho { display: flex; gap: 2px; height: 18px; border-radius: 6px; overflow: hidden; background: var(--fundo-4); }
+.av-comp-trilho span { display: grid; place-items: center; width: var(--w); min-width: 3px; font: 500 10px var(--mono); color: rgba(0, 0, 0, .78); overflow: hidden; white-space: nowrap; transition: width .8s var(--mola), filter .2s; }
+.av-comp-trilho span.av-foco { filter: brightness(1.18); }
+.av-seg-novos { background: var(--cor); }
+.av-seg-cache { background: color-mix(in srgb, var(--cor) 34%, var(--fundo-4)); color: var(--texto) !important; }
+.av-seg-texto { background: color-mix(in srgb, var(--cor) 55%, #fff); }
+.av-seg-pensamento { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--cor) 70%, #fff) 0 4px, color-mix(in srgb, var(--cor) 45%, #fff) 4px 8px); }
+.av-partes .av-ponto { border-radius: 2px; }
+.analytics.anima .av-comp-trilho span { animation: av-estende .9s var(--mola) both; animation-delay: calc(var(--i) * 80ms + var(--j) * 60ms); }
+@media (prefers-reduced-motion: reduce) { .analytics.anima .av-linha { stroke-dasharray: none; animation: none; } .analytics.anima .av-marca, .analytics.anima .av-comp-trilho span { animation: none; } }.dock-item .dock-nome { color: var(--texto-2); }
+.dock-item:hover .dock-nome { color: var(--texto); }
+.av-card:not(.av-largo) header { flex-direction: column; gap: 8px; }
+.av-limite-rotulo { paint-order: stroke; stroke: var(--fundo-2); stroke-width: 5px; stroke-linejoin: round; }

@@ -1,0 +1,101 @@
+{
+  "name": "synapse",
+  "version": "1.7.0",
+  "private": true,
+  "type": "module",
+  "description": "Ambiente de trabalho local com Codex, Claude e Gemini.",
+  "author": "Synapse",
+  "main": "desktop/main.mjs",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "launch": "node launch.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "app": "electron .",
+    "node:obter": "node desktop/build/obter-node.mjs",
+    "dist": "node desktop/build/obter-node.mjs && electron-builder --win nsis --x64"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.325",
+    "@playwright/mcp": "0.0.85"
+  },
+  "devDependencies": {
+    "electron": "45.3.3",
+    "electron-builder": "26.18.0",
+    "resedit": "3.1.1"
+  },
+  "build": {
+    "appId": "com.orbita.desktop",
+    "productName": "Synapse",
+    "copyright": "Synapse",
+    "directories": {
+      "output": "dist",
+      "buildResources": "desktop/recursos"
+    },
+    "asar": false,
+    "npmRebuild": false,
+    "electronLanguages": [
+      "pt-BR",
+      "en-US"
+    ],
+    "files": [
+      "package.json",
+      "server.mjs",
+      "launch.mjs",
+      "lib/**",
+      "public/**",
+      "desktop/main.mjs",
+      "desktop/atualizacao.mjs",
+      "desktop/preload.cjs",
+      "desktop/abrindo.html",
+      "desktop/recursos/synapse.ico",
+      "desktop/recursos/synapse.png",
+      "desktop/recursos/bandeja.png",
+      "!node_modules/@anthropic-ai/claude-agent-sdk-*{,/**}"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/node",
+        "to": "node",
+        "filter": [
+          "node.exe",
+          "VERSAO.txt"
+        ]
+      }
+    ],
+    "afterPack": "desktop/build/after-pack.cjs",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "desktop/recursos/synapse.ico",
+      "executableName": "Synapse",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Synapse",
+      "uninstallDisplayName": "Synapse",
+      "installerIcon": "desktop/recursos/synapse.ico",
+      "uninstallerIcon": "desktop/recursos/synapse.ico",
+      "installerLanguages": [
+        "pt_BR"
+      ],
+      "language": "1046",
+      "artifactName": "Synapse-Setup-${version}.exe"
+    },
+    "publish": null
+  }
+}

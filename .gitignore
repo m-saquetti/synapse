@@ -1,0 +1,17 @@
+# dependencies and build output
+node_modules/
+vendor/
+dist/
+
+# local data, secrets and logs
+.data/
+private/
+.env
+.env.*
+*.log
+
+# tooling scratch
+.playwright-mcp/
+.vscode/
+.DS_Store
+Thumbs.db

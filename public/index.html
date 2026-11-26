@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title>Synapse</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/tema.css">
+<script src="/app.js" defer></script>
+<script src="/analises.js" defer></script>
+</head>
+<body>
+<div class="barra-janela" aria-hidden="true"><img src="/favicon.svg" class="brand-mark" alt=""><span class="barra-nome">Synapse</span><span id="barra-sala" class="barra-sala"></span></div>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Salas">
+    <a class="brand" href="/" aria-label="Synapse, início">
+      <img src="/favicon.svg" class="brand-mark" alt="">
+      <span class="brand-nome">Synapse</span><span class="brand-versao">v1.7</span>
+    </a>
+    <button id="collapse-rooms" class="collapse-rooms icon-button" type="button" aria-label="Recolher ou expandir salas" aria-expanded="true" aria-controls="room-list"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15M15.5 10l-2 2 2 2"/></svg></button>
+    <button id="new-room" class="new-room" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Nova sala<kbd>N</kbd></button>
+    <div class="sidebar-label"><span>Salas</span><span id="room-count">0</span></div>
+    <nav id="room-list" class="room-list" aria-label="Selecionar sala"></nav>
+    <details id="archived-rooms" class="archived-rooms" hidden><summary><span>Arquivadas</span><span id="archived-count">0</span></summary><div id="archived-list" class="room-list archived-list"></div></details>
+    <div class="sidebar-bottom">
+      <div id="usage-dock" class="usage-dock" aria-label="Uso dos participantes"></div>
+      <span id="connection" class="connection"><span></span>Conectando</span>
+      <span class="endereco">127.0.0.1 · local</span>
+    </div>
+    <div class="alca" data-alca="trilho" role="separator" aria-orientation="vertical" aria-label="Largura das salas: arraste, use as setas ou clique duas vezes para voltar ao padrão" tabindex="0"></div>
+  </aside>
+
+  <main class="main-panel">
+    <header class="room-header">
+      <button id="toggle-rooms" class="icon-button menu-button" type="button" aria-label="Abrir salas" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+      <div class="room-heading">
+        <h1 id="room-title">Synapse</h1>
+        <p id="room-subtitle" class="room-subtitle">Crie uma sala para começar.</p>
+      </div>
+      <div class="vista-tabs" role="tablist" aria-label="Visualização (Alt+1 e Alt+2)">
+        <span class="vista-tinta" aria-hidden="true"></span>
+        <button id="vista-interface" class="vista-tab active" role="tab" aria-selected="true" aria-controls="conversation" data-vista="interface" type="button" title="Interface (Alt+1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14v10H10l-4 3.5v-3.5H5z"/></svg>Interface</button>
+        <button id="vista-analises" class="vista-tab" role="tab" aria-selected="false" aria-controls="analytics-view" data-vista="analises" type="button" title="Análises (Alt+2)" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V11M10 19V5M15 19v-6M20 19V8"/></svg>Análises</button>
+      </div>
+      <div class="header-actions">
+        <button id="export-room" class="icon-button" type="button" title="Exportar conversa em Markdown" aria-label="Exportar conversa" disabled><svg viewBox="0 0 24 24"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 17v3h14v-3"/></svg></button>
+        <button id="toggle-details" class="icon-button" type="button" title="Painel do projeto" aria-label="Painel do projeto" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M14.5 4.5v15"/></svg></button>
+      </div>
+    </header>
+
+    <div class="faixa">
+      <div class="mode-switch">
+        <button id="mode-button" class="mode-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="mode-menu" title="Propósito da sala">
+          <span class="mode-kicker">Modo</span><span id="mode-name" class="mode-name">Chat</span><span id="mode-lead" class="mode-lead">GPT abre</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+        </button>
+        <div id="mode-menu" class="mode-menu" role="menu" aria-label="Modo da sala" hidden>
+          <button type="button" role="menuitemradio" data-mode="chat" aria-checked="true"><span class="mode-check" aria-hidden="true"></span><span><strong>Chat</strong><small>Ideias, planejamento e decisões. Sem alterar arquivos.</small><em id="mode-chat-order">GPT abre · Claude e Gemini analisam · GPT sintetiza</em></span></button>
+          <button type="button" role="menuitemradio" data-mode="code" aria-checked="false"><span class="mode-check" aria-hidden="true"></span><span><strong>Code</strong><small>Código, arquivos e testes na pasta da sala.</small><em id="mode-code-order">Claude implementa · GPT e Gemini revisam · Claude refina</em></span></button>
+        </div>
+      </div>
+      <div class="session-bar">
+        <button id="open-settings" class="session-settings" type="button" title="Modelos, acesso e ferramentas da sala"><span id="access-summary">Só conversa</span><span class="session-separator" aria-hidden="true">/</span><span id="models-summary">Modelos</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></button>
+        <span id="web-summary" class="web-summary">Web desligada</span>
+      </div>
+    </div>
+
+    <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="dismiss-error" class="icon-button" type="button" aria-label="Fechar aviso"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+
+    <section id="conversation" class="conversation" aria-label="Conversa da sala" tabindex="0">
+      <div id="approval-stack" class="approval-stack" aria-live="polite" hidden></div>
+      <div id="empty-state" class="empty-state">
+        <h2>O que vamos desenvolver?</h2><p>Traga uma ideia: um participante fala por vez, cada um constrói em cima do anterior. Para trabalhar nos arquivos, mude a sala para o modo Code.</p>
+        <div class="starter-grid">
+          <button class="starter luz" type="button" data-lane="chat" data-prompt="Quero transformar uma ideia em um projeto. Ajudem-me a definir o problema, os requisitos e uma primeira entrega útil."><strong>Explorar uma ideia</strong><span>Problema, requisitos e uma primeira entrega</span><em>Chat</em></button>
+          <button class="starter luz" type="button" data-lane="code" data-prompt="Quero construir uma primeira versão funcional na pasta desta sala. Primeiro leiam o contexto e me ajudem a definir o que vamos entregar."><strong>Construir um projeto</strong><span>Arquivos, código e testes na pasta da sala</span><em>Code</em></button>
+          <button class="starter luz" type="button" data-lane="code" data-prompt="Revisem o projeto e tragam uma análise independente: problemas concretos, melhorias prioritárias e como verificar cada uma."><strong>Revisar uma solução</strong><span>Análise independente e melhorias verificáveis</span><em>Code</em></button>
+        </div>
+      </div>
+      <div id="messages" class="messages" aria-live="polite" aria-relevant="additions"></div>
+      <div id="typing" class="typing-indicator" hidden>
+        <span id="typing-avatar" class="seat"></span>
+        <div><strong id="typing-label">Trabalhando</strong><span id="typing-detail"></span></div>
+        <span class="varredura" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <section id="analytics-view" class="analytics" aria-label="Análises de uso" hidden>
+      <div class="av-filtros">
+        <div class="av-seg" role="group" aria-label="Período" data-filtro="periodo"><button type="button" data-v="24h">24 h</button><button type="button" data-v="7d">7 dias</button><button type="button" data-v="30d">30 dias</button><button type="button" data-v="tudo">Tudo</button></div>
+        <div class="av-seg" role="group" aria-label="Salas" data-filtro="escopo"><button type="button" data-v="todas">Todas as salas</button><button type="button" data-v="sala">Esta sala</button></div>
+        <div class="av-seg" role="group" aria-label="Medida dos gráficos" data-filtro="medida"><button type="button" data-v="novos">Novos</button><button type="button" data-v="cache">Cache</button><button type="button" data-v="saida">Saída</button><button type="button" data-v="pensamento">Raciocínio</button><button type="button" data-v="total">Total</button></div>
+        <span id="av-estado" class="av-estado" aria-live="polite"></span>
+      </div>
+      <div id="av-kpis" class="av-kpis"></div>
+      <div class="av-grade">
+        <article class="av-card av-largo"><header><div><h3>Consumo ao longo do tempo</h3><p id="av-tempo-sub"></p></div><div id="av-legenda" class="av-legenda av-legenda-papeis"></div></header><div id="av-tempo" class="av-plot"></div></article>
+        <article class="av-card av-largo"><header><div><h3>Custo de cada fala</h3><p id="av-falas-sub"></p></div><div class="av-legenda av-legenda-papeis"></div></header><div id="av-falas" class="av-plot"></div></article>
+        <article class="av-card"><header><div><h3>Composição dos tokens</h3><p>Do que é feito o consumo de cada participante</p></div><div class="av-legenda av-partes" aria-hidden="true"><span class="av-leg"><i class="av-ponto av-seg-novos"></i>Novos</span><span class="av-leg"><i class="av-ponto av-seg-cache"></i>Cache</span><span class="av-leg"><i class="av-ponto av-seg-texto"></i>Saída</span><span class="av-leg"><i class="av-ponto av-seg-pensamento"></i>Raciocínio</span></div></header><div id="av-composicao" class="av-hbars"></div></article>
+        <article class="av-card"><header><div><h3>Tamanho da conversa</h3><p>Contexto relido a cada requisição; acima da linha, a próxima fala renova a conversa</p></div><div class="av-legenda av-legenda-papeis"></div></header><div id="av-contexto" class="av-plot"></div></article>
+        <article class="av-card av-largo"><header><div><h3>Horários de uso</h3><p id="av-horas-sub"></p></div></header><div id="av-horas" class="av-plot"></div></article>
+        <article class="av-card"><header><div><h3>Esforço de raciocínio</h3><p>Média por fala segundo o nível escolhido na sala</p></div></header><div id="av-esforco" class="av-hbars"></div></article>
+        <article class="av-card"><header><div><h3>Falas mais caras</h3><p>As seis falas que mais consumiram na medida escolhida</p></div></header><div id="av-top" class="av-hbars"></div></article>
+        <article class="av-card av-largo"><header><div><h3>Por modelo e modo</h3><p>Chat costuma custar uma fração de Code: cada ferramenta usada relê o contexto inteiro</p></div></header><div id="av-tabela" class="av-tabela"></div></article>
+      </div>
+      <p id="av-nota" class="av-nota"></p>
+      <div id="av-tip" class="av-tip" role="tooltip" hidden></div>
+    </section>
+
+    <div class="composer-area">
+      <div id="job-strip" class="job-strip" hidden>
+        <div class="job-info"><span class="working-dot"></span><span id="job-label">Em andamento</span><span id="job-progress"></span></div>
+        <div id="job-steps" class="job-steps" aria-hidden="true"></div>
+        <div class="job-actions">
+          <button id="resume-job" type="button" hidden>Continuar de onde paramos</button>
+          <button id="cancel-job" type="button">Interromper</button>
+        </div>
+      </div>
+      <form id="composer-form" class="composer">
+        <div id="reply-chip" class="reply-chip" role="status" aria-live="polite" hidden></div>
+        <label for="message-input" class="sr-only">Sua mensagem para a sala</label>
+        <textarea id="message-input" rows="2" maxlength="24000" placeholder="Que ideia vamos desenvolver juntos? Use @ para chamar alguém" required aria-describedby="mode-description"></textarea>
+        <div id="mention-menu" class="mention-menu" role="listbox" aria-label="Chamar participante" hidden></div>
+        <div class="composer-toolbar">
+          <div class="composer-controls">
+            <label class="select-control"><span class="control-label">Para</span>
+              <select id="target-select" aria-label="Destinatário"><option value="auto">Grupo · todos</option><option value="codex">Só GPT</option><option value="claude">Só Claude</option><option value="gemini">Só Gemini</option></select>
+            </label>
+            <select id="mode-select" aria-label="Espaço selecionado" hidden><option value="chat">Chat</option><option value="code">Code</option></select>
+            <button id="lane-suggestion" class="lane-suggestion" type="button" hidden></button>
+          </div>
+          <button id="send-message" class="send-button" type="submit" aria-label="Enviar mensagem" title="Enviar (Enter)"><svg viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button>
+        </div>
+      </form>
+      <div class="composer-footnote"><span id="mode-description">Ideias e planejamento.</span><span class="keyboard-tip">Enter envia · Shift+Enter quebra a linha</span></div>
+    </div>
+  </main>
+
+  <aside id="details-panel" class="details-panel" aria-label="Painel do projeto">
+    <div class="alca" data-alca="painel" role="separator" aria-orientation="vertical" aria-label="Largura do painel: arraste, use as setas ou clique duas vezes para voltar ao padrão" tabindex="0"></div>
+    <div class="details-heading"><span>Projeto</span><button id="close-details" class="icon-button" type="button" aria-label="Fechar painel"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+    <div class="panel-tabs" role="tablist" aria-label="Painel do projeto">
+      <button id="tab-context" class="panel-tab active" role="tab" aria-selected="true" aria-controls="panel-context" data-panel="context" type="button">Visão geral</button>
+      <button id="tab-files" class="panel-tab" role="tab" aria-selected="false" aria-controls="panel-files" data-panel="files" type="button">Arquivos</button>
+      <button id="tab-activity" class="panel-tab" role="tab" aria-selected="false" aria-controls="panel-activity" data-panel="activity" type="button">Ações</button>
+      <button id="tab-memory" class="panel-tab" role="tab" aria-selected="false" aria-controls="panel-memory" data-panel="memory" type="button">Memória</button>
+      <span id="panel-ink" class="tinta" aria-hidden="true"></span>
+    </div>
+
+    <div id="panel-context" class="inspector-panel" role="tabpanel" aria-labelledby="tab-context">
+      <div class="section-heading"><h2>Participantes</h2><button id="refresh-agents" class="text-button" type="button">Atualizar uso</button></div>
+      <section class="participants" aria-label="Participantes">
+        <div class="participant role-user"><span class="seat seat-user"></span><div><strong>Você</strong><span>Direção e decisões</span></div></div>
+        <div class="participant role-codex"><span class="seat seat-codex"></span><div><strong>GPT <small class="company">OpenAI</small> <span id="codex-dot" class="agent-status-dot"></span></strong><span id="codex-status">Verificando conexão…</span><span id="codex-model-label" class="participant-model">GPT</span><span id="codex-session" class="session-state"></span><div id="codex-usage" class="usage-windows"></div><button id="codex-connect" class="connect-account" type="button" data-agent="codex" hidden>Conectar</button></div></div>
+        <div class="participant role-claude"><span class="seat seat-claude"></span><div><strong>Claude <small class="company">Anthropic</small> <span id="claude-dot" class="agent-status-dot"></span></strong><span id="claude-status">Verificando conexão…</span><span id="claude-model-label" class="participant-model">Claude</span><span id="claude-session" class="session-state"></span><div id="claude-usage" class="usage-windows"></div><button id="claude-connect" class="connect-account" type="button" data-agent="claude" hidden>Conectar</button></div></div>
+        <div class="participant role-gemini"><span class="seat seat-gemini"></span><div><strong>Gemini <small class="company">Google</small> <span id="gemini-dot" class="agent-status-dot"></span></strong><span id="gemini-status">Verificando conexão…</span><span id="gemini-model-label" class="participant-model">Gemini</span><span id="gemini-session" class="session-state"></span><div id="gemini-usage" class="usage-windows"></div><div id="gemini-origins" class="usage-origins" hidden></div><button id="gemini-connect" class="connect-account" type="button" data-agent="gemini" hidden>Conectar</button></div></div>
+      </section>
+      <p class="section-caption">Uso informado pelos clientes oficiais. Sem percentual não quer dizer consumo zero.</p>
+
+      <section class="workspace-section">
+        <div class="section-heading"><h2>Pasta compartilhada</h2><button id="change-workspace" class="text-button" type="button">Alterar</button></div>
+        <button id="workspace-path" class="workspace-path" type="button" title="Ver arquivos">Pasta própria da sala</button>
+        <p id="capabilities-note" class="section-caption"></p>
+      </section>
+
+      <section class="context-section">
+        <div class="section-heading"><h2>Contexto</h2><button id="edit-brief" class="text-button" type="button" disabled>Editar</button></div>
+        <p id="room-brief" class="brief-text">Objetivo, requisitos e decisões do projeto.</p>
+      </section>
+
+      <section class="capability-section">
+        <div class="section-heading"><h2>Ferramentas</h2></div>
+        <div id="capability-list"></div>
+        <p class="section-caption">Valem conforme o modo e as configurações da sala. Recursos exclusivos dos sites dos fornecedores não passam para a Synapse.</p>
+      </section>
+    </div>
+
+    <div id="panel-files" class="inspector-panel" role="tabpanel" aria-labelledby="tab-files" hidden>
+      <div class="section-heading"><h2>Arquivos da pasta</h2><button id="refresh-files" class="text-button" type="button">Atualizar</button></div>
+      <div class="file-navigation"><button id="files-up" class="icon-button" type="button" aria-label="Pasta anterior"><svg viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button><span id="files-location">/</span></div>
+      <div id="file-list" class="file-list"><p class="activity-empty">Os arquivos da sala aparecem aqui.</p></div>
+      <section class="versions-section">
+        <div class="section-heading"><h2>Versões salvas</h2><button id="refresh-versions" class="text-button" type="button">Atualizar</button></div>
+        <div id="version-list"></div>
+        <p class="section-caption">Cópias antes e depois de cada participação em Code, até 5 MB por arquivo e 50 MB por captura. Dependências e credenciais ficam de fora.</p>
+      </section>
+    </div>
+
+    <div id="panel-activity" class="inspector-panel" role="tabpanel" aria-labelledby="tab-activity" hidden>
+      <div class="section-heading"><h2>Ações dos agentes</h2><span id="tool-count" class="count-pill">0</span></div>
+      <div id="tool-list" class="tool-list"></div>
+      <section class="activity-section">
+        <div class="section-heading"><h2>Rodadas</h2><span id="activity-count" class="count-pill">0</span></div>
+        <div id="activity-list" class="activity-list"></div>
+      </section>
+    </div>
+
+    <div id="panel-memory" class="inspector-panel" role="tabpanel" aria-labelledby="tab-memory" hidden>
+      <div class="section-heading"><h2>Pontos de recuperação</h2><span id="memory-count" class="count-pill">0</span></div>
+      <p class="section-caption">Decisões, entregas, verificações e pendências registradas pelos participantes. Quem continua recebe esses registros e confere os arquivos.</p>
+      <div id="memory-list"></div>
+    </div>
+  </aside>
+</div>
+<div id="veu" class="veu" hidden></div>
+
+<dialog id="room-dialog" class="modal">
+  <form id="room-form">
+    <div class="modal-top"><h2>Nova sala</h2><button class="icon-button" type="button" data-close="room-dialog" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+    <p>Uma conversa, uma pasta e um objetivo compartilhado pelos quatro.</p>
+    <label for="new-room-title">Nome da sala</label>
+    <input id="new-room-title" maxlength="100" placeholder="Ex.: Meu próximo aplicativo" required>
+    <label for="new-room-brief">Contexto inicial <span>opcional</span></label>
+    <textarea id="new-room-brief" maxlength="10000" rows="4" placeholder="O que vamos construir, para quem e com quais requisitos?"></textarea>
+    <label class="checkbox-row"><input id="new-room-project" type="checkbox" checked><span>Permitir arquivos e comandos na pasta da sala e pesquisa na web</span></label>
+    <div class="modal-actions"><button class="secondary-button" type="button" data-close="room-dialog">Cancelar</button><button id="create-room-submit" class="primary-button" type="submit">Criar sala</button></div>
+  </form>
+</dialog>
+
+<dialog id="brief-dialog" class="modal">
+  <form id="brief-form">
+    <div class="modal-top"><h2>Contexto da sala</h2><button class="icon-button" type="button" data-close="brief-dialog" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+    <p>Este contexto vai junto com cada participação dos três agentes.</p>
+    <label for="edit-room-title">Nome da sala</label>
+    <input id="edit-room-title" maxlength="100" required>
+    <label for="edit-room-brief">Objetivo, requisitos e decisões</label>
+    <textarea id="edit-room-brief" maxlength="10000" rows="7"></textarea>
+    <div class="modal-actions"><button class="secondary-button" type="button" data-close="brief-dialog">Cancelar</button><button id="save-brief-submit" class="primary-button" type="submit">Salvar contexto</button></div>
+  </form>
+</dialog>
+
+<dialog id="settings-dialog" class="modal settings-modal">
+  <form id="settings-form">
+    <div class="modal-top"><h2>Configurações da sala</h2><button class="icon-button" type="button" data-close="settings-dialog" aria-label="Fechar configurações"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+    <p>Modelos, ordem de preferência e o que os agentes podem fazer nesta sala.</p>
+    <fieldset>
+      <legend>Modelos</legend>
+      <div class="settings-grid tres model-grid">
+        <div class="model-card role-codex"><label for="codex-model"><span class="seat seat-codex"></span>OpenAI <b>GPT</b></label><select id="codex-model"></select><input id="codex-custom" class="custom-model" placeholder="Identificador exato" aria-label="Modelo OpenAI personalizado" hidden><label for="codex-effort" class="effort-label">Raciocínio</label><select id="codex-effort" class="effort-select"></select></div>
+        <div class="model-card role-claude"><label for="claude-model"><span class="seat seat-claude"></span>Anthropic <b>Claude</b></label><select id="claude-model"></select><input id="claude-custom" class="custom-model" placeholder="Identificador exato" aria-label="Modelo Anthropic personalizado" hidden><label for="claude-effort" class="effort-label">Esforço</label><select id="claude-effort" class="effort-select"></select></div>
+        <div class="model-card role-gemini"><label for="gemini-model"><span class="seat seat-gemini"></span>Google <b>Gemini</b></label><select id="gemini-model"></select><input id="gemini-custom" class="custom-model" placeholder="Identificador exato" aria-label="Modelo Google personalizado" hidden><label for="gemini-effort" class="effort-label">Raciocínio</label><select id="gemini-effort" class="effort-select"></select></div>
+      </div>
+      <p class="field-note">Cada participante usa o modelo e o nível de raciocínio escolhidos aqui, com os níveis que o próprio modelo oferece. No automático, o Gemini usa o AI Studio e recorre à conta Google do Antigravity se precisar.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Coordenação</legend>
+      <div class="settings-grid">
+        <div><label for="code-preference">Ordem no modo Code <span>o primeiro lidera</span></label><select id="code-preference"><option value="claude,codex,gemini">Claude → GPT → Gemini</option><option value="codex,claude,gemini">GPT → Claude → Gemini</option><option value="gemini,codex,claude">Gemini → GPT → Claude</option><option value="claude,gemini,codex">Claude → Gemini → GPT</option><option value="codex,gemini,claude">GPT → Gemini → Claude</option><option value="gemini,claude,codex">Gemini → Claude → GPT</option></select></div>
+        <div><label for="chat-preference">Ordem no modo Chat <span>o primeiro abre e sintetiza</span></label><select id="chat-preference"><option value="codex,claude,gemini">GPT → Claude → Gemini</option><option value="claude,codex,gemini">Claude → GPT → Gemini</option><option value="gemini,codex,claude">Gemini → GPT → Claude</option><option value="claude,gemini,codex">Claude → Gemini → GPT</option><option value="codex,gemini,claude">GPT → Gemini → Claude</option><option value="gemini,claude,codex">Gemini → Claude → GPT</option></select></div>
+        <div><label for="handoff-percent">Passar a vez a partir de</label><div class="input-with-unit"><input id="handoff-percent" type="number" min="50" max="95" required><span>% de uso</span></div></div>
+        <div><label for="max-steps">Falas por rodada no Code</label><input id="max-steps" type="number" min="2" max="24" required></div>
+        <div><label for="studio-rounds" title="Novas tentativas por falha do Google (até 2 por fala) não contam como rodada">Rodadas do AI Studio por fala</label><input id="studio-rounds" type="number" min="2" max="20" required></div>
+      </div>
+      <p class="field-note">Um participante fala por vez. Quem chega ao limite preventivo vai para o fim da fila; quem esgota o limite sai da rodada e a vez passa para o próximo. Uso desconhecido nunca é tratado como zero.</p>
+      <label class="checkbox-row"><input id="auto-resume" type="checkbox"><span>Retomar sozinha uma tarefa pausada por uso quando o cliente confirmar capacidade, enquanto a Synapse estiver aberta</span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Acesso</legend>
+      <label for="access-mode">O que os agentes podem fazer</label>
+      <select id="access-mode"><option value="chat">Só conversa: texto e pesquisa opcional</option><option value="project">Projeto: arquivos e comandos na pasta</option><option value="computer">Computador: automações por comandos</option></select>
+      <p id="access-help" class="field-note"></p>
+      <label for="workspace-input">Pasta de trabalho</label>
+      <div class="input-with-button"><input id="workspace-input" placeholder="Pasta própria da sala (automática)"><button id="browse-workspace" type="button" class="secondary-button">Escolher</button></div>
+      <label class="checkbox-row"><input id="internet-enabled" type="checkbox"><span>Permitir pesquisa e leitura de páginas na internet</span></label>
+      <div class="shared-tool-settings">
+        <label class="checkbox-row"><input id="rea-enabled" type="checkbox"><span>REA: análise de aplicativos e artefatos</span></label>
+        <label class="checkbox-row"><input id="browser-enabled" type="checkbox"><span>Navegador isolado: navegação e testes</span></label>
+        <label class="checkbox-row"><input id="github-enabled" type="checkbox"><span>GitHub público: ler repositórios e arquivos</span></label>
+      </div>
+      <label class="checkbox-row autonomia"><input id="auto-approve" type="checkbox"><span><strong>Autonomia:</strong> aprovar sozinha as ações dos agentes nesta sala (comandos, arquivos e ferramentas), sem pedir clique a cada passo. Cada aprovação fica registrada em Ações. Continuam pedindo sua confirmação: apagar pastas de forma recursiva, publicar (git push, npm publish), formatar disco, desligar o computador e alterar o registro. Vale só para Projeto e Computador.</span></label>
+      <label class="checkbox-row autonomia"><input id="full-integration" type="checkbox"><span><strong>Integração total:</strong> cada participante trabalha com os recursos da interface oficial. <em>GPT (Codex):</em> navegador, uso do computador, apps, plugins, hooks, multiagente, memórias, geração de imagem e AGENTS.md. <em>Claude (Claude Code):</em> todas as ferramentas, subagentes, skills, plugins, hooks, comandos, MCP e CLAUDE.md das suas configurações. <em>Gemini (Antigravity):</em> agente completo, com subagentes, research, geração de imagem, fluxos e /browser (exige internet ligada). As ações continuam passando pela sua aprovação ou pela Autonomia, e as permissões que você já definiu nas configurações de cada cliente oficial passam a valer. Vale só para Projeto e Computador.</span></label>
+      <div id="user-mcp" class="user-mcp" hidden>
+        <p class="user-mcp-title">Servidores MCP das suas configurações <span>carregados nesta sala</span></p>
+        <div id="user-mcp-list" class="user-mcp-list"></div>
+        <p class="field-note">Com a integração total, o Claude Code e o Codex carregam em toda fala os servidores MCP das suas próprias configurações, e cada ferramenta entra no contexto que é relido a cada chamada. Desmarque os que esta sala não usa: a fala fica mais leve e nada muda nas suas configurações.</p>
+      </div>
+      <p class="field-note">Navegador e GitHub dependem da internet ligada. As conexões habilitadas também ficam disponíveis para o Gemini via AI Studio. A leitura e a gravação de arquivos por essa rota passam pelas aprovações da sala.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Execução</legend>
+      <div class="settings-grid">
+        <div><label for="timeout-minutes">Minutos por participação</label><input id="timeout-minutes" type="number" min="1" max="60" value="15" required></div>
+        <div><label for="tool-call-limit">Ferramentas por fala <span>Claude e GPT</span></label><input id="tool-call-limit" type="number" min="0" max="300" required></div>
+      </div>
+      <p class="field-note">Teto de chamadas de ferramenta numa fala do Claude ou do GPT no modo Code. Ao atingir, a fala não se perde: o participante para de usar ferramentas e responde com o que já fez e verificou, e a rodada segue. É uma proteção contra falas que releem o contexto dezenas de vezes; 0 desliga.</p>
+    </fieldset>
+    <p id="settings-error" class="inline-error" role="alert" hidden></p>
+    <div class="modal-actions"><button class="secondary-button" type="button" data-close="settings-dialog">Cancelar</button><button id="save-settings" class="primary-button" type="submit">Salvar configurações</button></div>
+  </form>
+</dialog>
+
+<dialog id="folder-dialog" class="modal folder-modal">
+  <div class="modal-top"><h2>Pasta compartilhada</h2><button class="icon-button" type="button" data-close="folder-dialog" aria-label="Fechar pastas"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+  <form id="folder-path-form" class="input-with-button"><input id="folder-path" aria-label="Caminho completo da pasta" placeholder="Caminho completo"><button class="secondary-button" type="submit">Abrir</button></form>
+  <div class="folder-toolbar"><button id="folder-up" class="text-button" type="button">Pasta acima</button><button id="folder-home" class="text-button" type="button">Pasta pessoal</button><span id="folder-roots"></span></div>
+  <div id="folder-list" class="folder-list"></div>
+  <p id="folder-error" class="inline-error" role="alert" hidden></p>
+  <div class="modal-actions"><button class="secondary-button" type="button" data-close="folder-dialog">Cancelar</button><button id="select-folder" class="primary-button" type="button">Usar esta pasta</button></div>
+</dialog>
+
+<dialog id="file-dialog" class="modal file-modal">
+  <div class="modal-top">
+    <h2 id="file-title">Arquivo</h2>
+    <div class="file-actions"><button id="toggle-preview" class="secondary-button" type="button" hidden>Ver código</button><button id="download-file" class="secondary-button" type="button">Baixar</button><button class="icon-button" type="button" data-close="file-dialog" aria-label="Fechar arquivo"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+  </div>
+  <p id="file-info" class="field-note"></p>
+  <div id="file-content" class="file-content"></div>
+</dialog>
+
+<div id="room-menu" class="room-menu" role="menu" aria-label="Ações da sala" hidden>
+  <button type="button" role="menuitem" data-action="rename">Renomear e editar contexto</button>
+  <button type="button" role="menuitem" data-action="archive">Arquivar sala</button>
+  <button type="button" role="menuitem" data-action="delete" class="perigo">Excluir sala…</button>
+</div>
+
+<dialog id="account-dialog" class="modal account-modal" aria-labelledby="account-title">
+  <div class="modal-top"><h2 id="account-title">Conectar conta</h2><button class="icon-button" type="button" data-close="account-dialog" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+  <p id="account-intro"></p>
+  <div id="account-state" class="account-state" role="status" aria-live="polite"><span class="account-pulse" aria-hidden="true"></span><span id="account-message"></span></div>
+  <div id="account-device" class="account-device" hidden><span>Código para digitar na página</span><strong id="account-user-code"></strong><button id="account-copy-code" class="text-button" type="button">Copiar código</button></div>
+  <a id="account-link" class="secondary-button account-link" target="_blank" rel="noopener noreferrer" hidden>Abrir a página de login</a>
+  <form id="account-code-form" class="account-code" hidden>
+    <label for="account-code">Código da página do Claude <span>só se ela pedir para colar</span></label>
+    <div class="input-with-button"><input id="account-code" autocomplete="off" spellcheck="false" placeholder="Cole o código aqui"><button id="account-code-send" class="primary-button" type="submit">Enviar código</button></div>
+  </form>
+  <p id="account-note" class="field-note"></p>
+  <div class="modal-actions"><button id="account-alt" class="text-button" type="button" hidden>Usar código de dispositivo</button><button id="account-cancel" class="secondary-button" type="button">Cancelar login</button><button id="account-retry" class="primary-button" type="button" hidden>Tentar de novo</button><button id="account-done" class="primary-button" type="button" hidden>Concluir</button></div>
+</dialog>
+
+<dialog id="confirm-dialog" class="modal confirm-modal">
+  <form id="confirm-form" method="dialog">
+    <div class="modal-top"><h2 id="confirm-title">Excluir sala?</h2></div>
+    <p id="confirm-text"></p>
+    <div class="modal-actions"><button class="secondary-button" type="button" data-close="confirm-dialog">Cancelar</button><button id="confirm-submit" class="primary-button perigo" type="submit" value="ok">Excluir</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
